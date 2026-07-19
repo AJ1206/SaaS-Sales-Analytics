@@ -1,0 +1,42 @@
+{
+  "name": "SaaS Executive",
+  "dataColors": [
+    "#2E5EAA", "#5B9BD5", "#70AD47", "#FFC000",
+    "#C0504D", "#7F7F7F", "#264478", "#9E480E"
+  ],
+  "background": "#FFFFFF",
+  "firstLevelElements": "#252525",
+  "secondLevelElements": "#666666",
+  "tableAccent": "#2E5EAA",
+  "good": "#70AD47",
+  "neutral": "#FFC000",
+  "bad": "#C0504D",
+  "maximum": "#2E5EAA",
+  "minimum": "#DDE6F0",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 14, "color": "#252525" },
+    "header": { "fontFace": "Segoe UI Semibold", "fontSize": 12, "color": "#252525" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#666666" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }],
+        "border": [{ "show": true, "color": { "solid": { "color": "#E6E6E6" } }, "radius": 6 }],
+        "visualHeader": [{ "show": false }],
+        "title": [{ "fontColor": { "solid": { "color": "#252525" } }, "fontSize": 12, "fontFamily": "Segoe UI Semibold" }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "color": { "solid": { "color": "#2E5EAA" } }, "fontSize": 28, "fontFamily": "Segoe UI Semibold" }],
+        "categoryLabels": [{ "color": { "solid": { "color": "#666666" } }, "fontSize": 11 }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#F5F7FA" } }, "transparency": 0 }]
+      }
+    }
+  }
+}

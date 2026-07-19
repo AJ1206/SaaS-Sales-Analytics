@@ -1,0 +1,110 @@
+/* ============================================================================
+   ALL DAX for the SaaS Sales Dashboard — consolidated, paste-ready
+   Dataset source: https://www.kaggle.com/datasets/nnthanh101/aws-saas-sales
+
+   ORDER TO ADD THINGS
+     1) Create the Date table (New Table)         -> section 1
+     2) Add the Discount Bucket column (New Column on Sales table) -> section 2
+     3) Add all measures (New Measure, one each)  -> section 3
+
+   FASTER OPTION: install Tabular Editor (free), connect to your model, and
+   add the measures there — it's much quicker than the Power BI measure dialog.
+   ============================================================================ */
+
+
+/* ---------------------------------------------------------------------------
+   1) DATE TABLE   (New Table)
+      After creating it: Mark as Date Table (date column = Date).
+      Sort "Month Name" by Month, "Month Year" by "Year-Month Sort".
+   --------------------------------------------------------------------------- */
+Date =
+VAR BaseCalendar = CALENDARAUTO()
+RETURN
+ADDCOLUMNS(
+    BaseCalendar,
+    "Year", YEAR([Date]),
+    "Month", MONTH([Date]),
+    "Month Name", FORMAT([Date], "MMM"),
+    "Month Year", FORMAT([Date], "MMM YYYY"),
+    "Quarter", "Q" & FORMAT([Date], "Q"),
+    "Year-Month Sort", YEAR([Date]) * 100 + MONTH([Date])
+)
+
+
+/* ---------------------------------------------------------------------------
+   2) CALCULATED COLUMN on the Sales table   (New Column)
+      Buckets the discount so we can chart margin per discount band.
+   --------------------------------------------------------------------------- */
+Discount Bucket =
+SWITCH(
+    TRUE(),
+    Sales[discount] = 0,      "0%",
+    Sales[discount] <= 0.10,  "1-10%",
+    Sales[discount] <= 0.20,  "11-20%",
+    Sales[discount] <= 0.30,  "21-30%",
+    "30%+"
+)
+
+
+/* ---------------------------------------------------------------------------
+   3) MEASURES   (New Measure — add each separately)
+      Tip: put them all in a dedicated "_Measures" table to stay organized.
+   --------------------------------------------------------------------------- */
+
+-- Core ----------------------------------------------------------------------
+Total Sales = SUM(Sales[sales])
+
+Total Profit = SUM(Sales[profit])
+
+-- Distinct, NOT COUNT(*): one order spans multiple rows.
+Total Orders = DISTINCTCOUNT(Sales[order_id])
+
+Total Quantity = SUM(Sales[quantity])
+
+Total Customers = DISTINCTCOUNT(Sales[customer_id])
+
+-- Measure, not an average of the row-level margin column. Format as %.
+Profit Margin % = DIVIDE([Total Profit], [Total Sales])
+
+Avg Order Value = DIVIDE([Total Sales], [Total Orders])
+
+-- discount is stored 0-1; format this as %.
+Avg Discount % = AVERAGE(Sales[discount])
+
+-- Time intelligence ---------------------------------------------------------
+Sales LY = CALCULATE([Total Sales], SAMEPERIODLASTYEAR('Date'[Date]))
+
+Sales YoY % = DIVIDE([Total Sales] - [Sales LY], [Sales LY])
+
+Sales YTD = TOTALYTD([Total Sales], 'Date'[Date])
+
+Sales MoM % =
+VAR PrevMonth = CALCULATE([Total Sales], DATEADD('Date'[Date], -1, MONTH))
+RETURN DIVIDE([Total Sales] - PrevMonth, PrevMonth)
+
+-- Advanced ------------------------------------------------------------------
+-- Computed from profit directly so it doesn't depend on the is_loss type.
+Loss-Making Sales = CALCULATE([Total Sales], Sales[profit] < 0)
+
+% of Total Sales = DIVIDE([Total Sales], CALCULATE([Total Sales], ALLSELECTED(Sales)))
+
+Running Total Sales =
+CALCULATE(
+    [Total Sales],
+    FILTER(ALLSELECTED('Date'[Date]), 'Date'[Date] <= MAX('Date'[Date]))
+)
+
+Product Rank = RANKX(ALL(Sales[product]), [Total Sales], , DESC)
+
+-- Cumulative % of sales across customers (for the Pareto/concentration chart)
+Cumulative % of Sales =
+VAR CurrentCustomerSales = [Total Sales]
+VAR AllCustomers =
+    ADDCOLUMNS(ALLSELECTED(Sales[customer]), "@sales", [Total Sales])
+VAR RankedAtOrAbove =
+    FILTER(AllCustomers, [@sales] >= CurrentCustomerSales)
+RETURN
+DIVIDE(
+    SUMX(RankedAtOrAbove, [@sales]),
+    CALCULATE([Total Sales], ALLSELECTED(Sales))
+)
